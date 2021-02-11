@@ -35,6 +35,7 @@ Friendly reminder, we have a [bug bounty program](https://hackerone.com/tendermi
   - [rpc/client/http] \#6022 Change `timeout` type to `time.Duration` in `NewWithTimeout`
   - [light] \#6054 Move `MaxRetryAttempt` option from client to provider.
     - `NewWithOptions` now sets the max retry attempts and timeouts (@cmwaters)
+  - [blockhain/v2] \#6077 Internalizes behavior package (@cmwaters)
 
 - Blockchain Protocol
 
