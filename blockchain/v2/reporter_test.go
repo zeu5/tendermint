@@ -1,10 +1,9 @@
-package behavior_test
+package v2
 
 import (
 	"sync"
 	"testing"
 
-	bh "github.com/tendermint/tendermint/behavior"
 	"github.com/tendermint/tendermint/p2p"
 )
 
@@ -12,14 +11,14 @@ import (
 // peer behavior in memory indexed by the peerID.
 func TestMockReporter(t *testing.T) {
 	var peerID p2p.NodeID = "MockPeer"
-	pr := bh.NewMockReporter()
+	pr := NewMockReporter()
 
 	behaviors := pr.GetBehaviors(peerID)
 	if len(behaviors) != 0 {
 		t.Error("Expected to have no behaviors reported")
 	}
 
-	badMessage := bh.BadMessage(peerID, "bad message")
+	badMessage := BadMessage(peerID, "bad message")
 	if err := pr.Report(badMessage); err != nil {
 		t.Error(err)
 	}
@@ -35,14 +34,14 @@ func TestMockReporter(t *testing.T) {
 
 type scriptItem struct {
 	peerID   p2p.NodeID
-	behavior bh.PeerBehavior
+	behavior PeerBehavior
 }
 
 // equalBehaviors returns true if a and b contain the same PeerBehaviors with
 // the same freequencies and otherwise false.
-func equalBehaviors(a []bh.PeerBehavior, b []bh.PeerBehavior) bool {
-	aHistogram := map[bh.PeerBehavior]int{}
-	bHistogram := map[bh.PeerBehavior]int{}
+func equalBehaviors(a []PeerBehavior, b []PeerBehavior) bool {
+	aHistogram := map[PeerBehavior]int{}
+	bHistogram := map[PeerBehavior]int{}
 
 	for _, behavior := range a {
 		aHistogram[behavior]++
@@ -77,34 +76,34 @@ func equalBehaviors(a []bh.PeerBehavior, b []bh.PeerBehavior) bool {
 func TestEqualPeerBehaviors(t *testing.T) {
 	var (
 		peerID        p2p.NodeID = "MockPeer"
-		consensusVote            = bh.ConsensusVote(peerID, "voted")
-		blockPart                = bh.BlockPart(peerID, "blocked")
+		consensusVote            = ConsensusVote(peerID, "voted")
+		blockPart                = BlockPart(peerID, "blocked")
 		equals                   = []struct {
-			left  []bh.PeerBehavior
-			right []bh.PeerBehavior
+			left  []PeerBehavior
+			right []PeerBehavior
 		}{
 			// Empty sets
-			{[]bh.PeerBehavior{}, []bh.PeerBehavior{}},
+			{[]PeerBehavior{}, []PeerBehavior{}},
 			// Single behaviors
-			{[]bh.PeerBehavior{consensusVote}, []bh.PeerBehavior{consensusVote}},
+			{[]PeerBehavior{consensusVote}, []PeerBehavior{consensusVote}},
 			// Equal Frequencies
-			{[]bh.PeerBehavior{consensusVote, consensusVote},
-				[]bh.PeerBehavior{consensusVote, consensusVote}},
+			{[]PeerBehavior{consensusVote, consensusVote},
+				[]PeerBehavior{consensusVote, consensusVote}},
 			// Equal frequencies different orders
-			{[]bh.PeerBehavior{consensusVote, blockPart},
-				[]bh.PeerBehavior{blockPart, consensusVote}},
+			{[]PeerBehavior{consensusVote, blockPart},
+				[]PeerBehavior{blockPart, consensusVote}},
 		}
 		unequals = []struct {
-			left  []bh.PeerBehavior
-			right []bh.PeerBehavior
+			left  []PeerBehavior
+			right []PeerBehavior
 		}{
 			// Comparing empty sets to non empty sets
-			{[]bh.PeerBehavior{}, []bh.PeerBehavior{consensusVote}},
+			{[]PeerBehavior{}, []PeerBehavior{consensusVote}},
 			// Different behaviors
-			{[]bh.PeerBehavior{consensusVote}, []bh.PeerBehavior{blockPart}},
+			{[]PeerBehavior{consensusVote}, []PeerBehavior{blockPart}},
 			// Same behavior with different frequencies
-			{[]bh.PeerBehavior{consensusVote},
-				[]bh.PeerBehavior{consensusVote, consensusVote}},
+			{[]PeerBehavior{consensusVote},
+				[]PeerBehavior{consensusVote, consensusVote}},
 		}
 	)
 
@@ -129,33 +128,33 @@ func TestMockPeerBehaviorReporterConcurrency(t *testing.T) {
 	var (
 		behaviorScript = []struct {
 			peerID    p2p.NodeID
-			behaviors []bh.PeerBehavior
+			behaviors []PeerBehavior
 		}{
-			{"1", []bh.PeerBehavior{bh.ConsensusVote("1", "")}},
-			{"2", []bh.PeerBehavior{bh.ConsensusVote("2", ""), bh.ConsensusVote("2", ""), bh.ConsensusVote("2", "")}},
+			{"1", []PeerBehavior{ConsensusVote("1", "")}},
+			{"2", []PeerBehavior{ConsensusVote("2", ""), ConsensusVote("2", ""), ConsensusVote("2", "")}},
 			{
 				"3",
-				[]bh.PeerBehavior{bh.BlockPart("3", ""),
-					bh.ConsensusVote("3", ""),
-					bh.BlockPart("3", ""),
-					bh.ConsensusVote("3", "")}},
+				[]PeerBehavior{BlockPart("3", ""),
+					ConsensusVote("3", ""),
+					BlockPart("3", ""),
+					ConsensusVote("3", "")}},
 			{
 				"4",
-				[]bh.PeerBehavior{bh.ConsensusVote("4", ""),
-					bh.ConsensusVote("4", ""),
-					bh.ConsensusVote("4", ""),
-					bh.ConsensusVote("4", "")}},
+				[]PeerBehavior{ConsensusVote("4", ""),
+					ConsensusVote("4", ""),
+					ConsensusVote("4", ""),
+					ConsensusVote("4", "")}},
 			{
 				"5",
-				[]bh.PeerBehavior{bh.BlockPart("5", ""),
-					bh.ConsensusVote("5", ""),
-					bh.BlockPart("5", ""),
-					bh.ConsensusVote("5", "")}},
+				[]PeerBehavior{BlockPart("5", ""),
+					ConsensusVote("5", ""),
+					BlockPart("5", ""),
+					ConsensusVote("5", "")}},
 		}
 	)
 
 	var receiveWg sync.WaitGroup
-	pr := bh.NewMockReporter()
+	pr := NewMockReporter()
 	scriptItems := make(chan scriptItem)
 	done := make(chan int)
 	numConsumers := 3

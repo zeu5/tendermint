@@ -15,7 +15,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/behavior"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/libs/service"
@@ -151,7 +150,7 @@ type testReactorParams struct {
 
 func newTestReactor(p testReactorParams) *BlockchainReactor {
 	store, state, _ := newReactorStore(p.genDoc, p.privVals, p.startHeight)
-	reporter := behavior.NewMockReporter()
+	reporter := NewMockReporter()
 
 	var appl blockApplier
 

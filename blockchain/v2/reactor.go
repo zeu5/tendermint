@@ -7,7 +7,6 @@ import (
 
 	proto "github.com/gogo/protobuf/proto"
 
-	"github.com/tendermint/tendermint/behavior"
 	bc "github.com/tendermint/tendermint/blockchain"
 	"github.com/tendermint/tendermint/libs/log"
 	tmsync "github.com/tendermint/tendermint/libs/sync"
@@ -44,7 +43,7 @@ type BlockchainReactor struct {
 	syncHeight    int64
 	events        chan Event // non-nil during a fast sync
 
-	reporter behavior.Reporter
+	reporter Reporter
 	io       iIO
 	store    blockStore
 }
@@ -54,7 +53,7 @@ type blockApplier interface {
 }
 
 // XXX: unify naming in this package around tmState
-func newReactor(state state.State, store blockStore, reporter behavior.Reporter,
+func newReactor(state state.State, store blockStore, reporter Reporter,
 	blockApplier blockApplier, fastSync bool) *BlockchainReactor {
 	initHeight := state.LastBlockHeight + 1
 	if initHeight == 1 {
@@ -82,7 +81,7 @@ func NewBlockchainReactor(
 	blockApplier blockApplier,
 	store blockStore,
 	fastSync bool) *BlockchainReactor {
-	reporter := behavior.NewMockReporter()
+	reporter := NewMockReporter()
 	return newReactor(state, store, reporter, blockApplier, fastSync)
 }
 
@@ -126,7 +125,7 @@ func (r *BlockchainReactor) SetLogger(logger log.Logger) {
 
 // Start implements cmn.Service interface
 func (r *BlockchainReactor) Start() error {
-	r.reporter = behavior.NewSwitchReporter(r.BaseReactor.Switch)
+	r.reporter = NewSwitchReporter(r.BaseReactor.Switch)
 	if r.fastSync {
 		err := r.startSync(nil)
 		if err != nil {
@@ -376,7 +375,7 @@ func (r *BlockchainReactor) demux(events <-chan Event) {
 				r.processor.send(event)
 			case scPeerError:
 				r.processor.send(event)
-				if err := r.reporter.Report(behavior.BadMessage(event.peerID, "scPeerError")); err != nil {
+				if err := r.reporter.Report(BadMessage(event.peerID, "scPeerError")); err != nil {
 					r.logger.Error("Error reporting peer", "err", err)
 				}
 			case scBlockRequest:
@@ -472,13 +471,13 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 
 	if err := proto.Unmarshal(msgBytes, msgProto); err != nil {
 		logger.Error("error decoding message", "err", err)
-		_ = r.reporter.Report(behavior.BadMessage(src.ID(), err.Error()))
+		_ = r.reporter.Report(BadMessage(src.ID(), err.Error()))
 		return
 	}
 
 	if err := msgProto.Validate(); err != nil {
 		logger.Error("peer sent us an invalid msg", "msg", msgProto, "err", err)
-		_ = r.reporter.Report(behavior.BadMessage(src.ID(), err.Error()))
+		_ = r.reporter.Report(BadMessage(src.ID(), err.Error()))
 		return
 	}
 
@@ -518,7 +517,7 @@ func (r *BlockchainReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		bi, err := types.BlockFromProto(msg.BlockResponse.Block)
 		if err != nil {
 			logger.Error("error transitioning block from protobuf", "err", err)
-			_ = r.reporter.Report(behavior.BadMessage(src.ID(), err.Error()))
+			_ = r.reporter.Report(BadMessage(src.ID(), err.Error()))
 			return
 		}
 		r.mtx.RLock()

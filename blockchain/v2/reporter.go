@@ -1,4 +1,4 @@
-package behavior
+package v2
 
 import (
 	"errors"

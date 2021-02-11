@@ -1,4 +1,4 @@
-package behavior
+package v2
 
 import (
 	"github.com/tendermint/tendermint/p2p"
